@@ -54,7 +54,15 @@ app.get('/api/health', (req, res) => {
 // ═══════════════════════════════
 app.use(express.static(path.join(__dirname, 'public')));
 
-// أي route ما كانش يرجع index.html
+// admin.html
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// كل route ثاني يرجع index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
