@@ -265,6 +265,22 @@
     .empty { text-align: center; padding: 3rem; color: var(--text3); }
     .empty span { display: block; font-size: 2.5rem; margin-bottom: .5rem; }
 
+    /* ══ IMAGE UPLOAD ══ */
+    .img-upload-wrap {
+      border: 2px dashed var(--border);
+      border-radius: 10px; cursor: pointer;
+      transition: border-color .2s; overflow: hidden;
+    }
+    .img-upload-wrap:hover { border-color: var(--rose); }
+    .img-preview {
+      padding: 1.5rem;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: .4rem; color: var(--text3);
+    }
+    .img-preview span { font-size: 2rem; }
+    .img-preview p { font-size: .8rem; }
+
     /* ══ RESPONSIVE ══ */
     .menu-btn {
       display: none; background: none; border: none;
@@ -543,7 +559,20 @@
           <option value="sale">تخفيض</option>
         </select>
       </div>
-    </div>
+
+      <div class="input-group">
+        <label>صورة المنتج 📸</label>
+        <div class="img-upload-wrap" id="imgUploadWrap" onclick="document.getElementById('pImage').click()">
+          <div class="img-preview" id="imgPreview">
+            <span>📷</span>
+            <p>اضغط لاختيار صورة من هاتفك</p>
+          </div>
+          <img id="imgPreviewImg" style="display:none;width:100%;height:160px;object-fit:cover;border-radius:8px;"/>
+        </div>
+        <input type="file" id="pImage" accept="image/*" capture="environment" style="display:none"/>
+        <input type="hidden" id="pImageData"/>
+        <button type="button" class="btn btn-ghost btn-sm" id="clearImgBtn" style="display:none;margin-top:.4rem">✕ حذف الصورة</button>
+      </div>
     <div class="modal-footer">
       <button class="btn btn-primary" id="saveProductBtn">💾 حفظ</button>
       <button class="btn btn-ghost" onclick="closeProductModal()">إلغاء</button>
@@ -749,6 +778,7 @@ document.getElementById('addProductBtn').addEventListener('click', () => {
   document.getElementById('pColors').value    = '#ffffff,#ffb6c1,#000000';
   document.getElementById('pDesc').value      = '';
   document.getElementById('pBadge').value     = '';
+  resetImgUpload('');
   document.getElementById('productModal').classList.add('open');
 });
 
@@ -768,6 +798,7 @@ function editProduct(id) {
   document.getElementById('pColors').value    = p.colors?.join(',') || '';
   document.getElementById('pDesc').value      = p.description || '';
   document.getElementById('pBadge').value     = p.badge || '';
+  resetImgUpload(p.image || '');
   document.getElementById('productModal').classList.add('open');
 }
 
@@ -785,6 +816,7 @@ document.getElementById('saveProductBtn').addEventListener('click', async () => 
     colors:      document.getElementById('pColors').value.split(',').map(c => c.trim()).filter(Boolean),
     description: document.getElementById('pDesc').value.trim(),
     badge:       document.getElementById('pBadge').value || null,
+    image:       document.getElementById('pImageData').value || null,
   };
 
   if (!body.name || !body.price) { toast('⚠️ الاسم والسعر مطلوبان'); return; }
@@ -957,6 +989,60 @@ document.addEventListener('keydown', e => {
   closeProductModal();
   closeOrderModal();
 });
+
+// ══════════════════════════════
+//  IMAGE UPLOAD
+// ══════════════════════════════
+document.getElementById('pImage').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+
+  // ضغط الصورة
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const MAX = 600;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = h * MAX / w; w = MAX; }
+      if (h > MAX) { w = w * MAX / h; h = MAX; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const data = canvas.toDataURL('image/jpeg', 0.75);
+      document.getElementById('pImageData').value = data;
+      document.getElementById('imgPreviewImg').src = data;
+      document.getElementById('imgPreviewImg').style.display = 'block';
+      document.getElementById('imgPreview').style.display = 'none';
+      document.getElementById('clearImgBtn').style.display = 'inline-block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('clearImgBtn').addEventListener('click', () => {
+  document.getElementById('pImageData').value = '';
+  document.getElementById('pImage').value = '';
+  document.getElementById('imgPreviewImg').style.display = 'none';
+  document.getElementById('imgPreview').style.display = 'flex';
+  document.getElementById('clearImgBtn').style.display = 'none';
+});
+
+function resetImgUpload(existing) {
+  document.getElementById('pImageData').value = existing || '';
+  document.getElementById('pImage').value = '';
+  if (existing) {
+    document.getElementById('imgPreviewImg').src = existing;
+    document.getElementById('imgPreviewImg').style.display = 'block';
+    document.getElementById('imgPreview').style.display = 'none';
+    document.getElementById('clearImgBtn').style.display = 'inline-block';
+  } else {
+    document.getElementById('imgPreviewImg').style.display = 'none';
+    document.getElementById('imgPreview').style.display = 'flex';
+    document.getElementById('clearImgBtn').style.display = 'none';
+  }
+}
 
 // ══════════════════════════════
 //  MOBILE MENU
